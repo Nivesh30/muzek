@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>muzek</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-mark"></span>
+        <div>
+          <h1>muzek</h1>
+          <p class="subtitle">pattern &rarr; color catalog</p>
+        </div>
+      </div>
+
+      <section class="upload-card" id="upload-card">
+        <div class="dropzone" id="dropzone">
+          <input type="file" id="file-input" accept="audio/*" multiple hidden />
+          <div class="dropzone-icon">&#9835;</div>
+          <p class="dropzone-text"><strong>Drop one or more songs</strong> or click to browse</p>
+          <p class="dropzone-hint">Analyzed locally &mdash; audio is discarded, only patterns are kept</p>
+        </div>
+        <div class="upload-fields hidden" id="upload-fields">
+          <ul class="upload-queue" id="upload-queue"></ul>
+          <input type="text" id="upload-artist" placeholder="Artist for all (optional)" />
+          <div class="upload-error hidden" id="upload-error"></div>
+          <div class="upload-actions">
+            <button class="btn btn-primary" id="upload-submit">Analyze <span id="upload-queue-count"></span></button>
+            <button class="btn btn-ghost" id="upload-cancel">Cancel</button>
+          </div>
+        </div>
+      </section>
+
+      <div class="song-list-header">
+        <span>Catalog</span>
+        <button class="btn btn-tiny" id="compare-btn" disabled>Compare (<span id="compare-count">0</span>)</button>
+      </div>
+      <ul id="song-list" class="song-list"></ul>
+    </aside>
+
+    <main class="main">
+      <div id="empty-state" class="empty-state">
+        <div class="empty-glyph">&#9834;</div>
+        <p>Select a song, or select two or more to compare.</p>
+      </div>
+
+      <div id="song-view" class="song-view hidden">
+        <header class="song-header">
+          <div>
+            <h2 id="song-title"></h2>
+            <span id="song-meta" class="song-meta"></span>
+          </div>
+        </header>
+
+        <div id="timeline" class="timeline"></div>
+
+        <div id="detail-panel" class="detail-panel hidden"></div>
+
+        <section class="graphs-section">
+          <h3>Breakdown</h3>
+          <div id="feature-graphs" class="feature-graphs"></div>
+        </section>
+
+        <section class="palette-section">
+          <h3>Palette</h3>
+          <div id="palette" class="palette"></div>
+        </section>
+
+        <section class="similar-section">
+          <h3>Similar songs</h3>
+          <div id="similar-songs" class="similar-songs"></div>
+        </section>
+      </div>
+
+      <div id="compare-view" class="compare-view hidden">
+        <header class="song-header">
+          <div>
+            <h2>Comparing <span id="compare-title-count"></span> songs</h2>
+            <span class="song-meta">Timelines are normalized to duration &mdash; hover to scrub across all tracks</span>
+          </div>
+        </header>
+        <div id="compare-tracks" class="compare-tracks"></div>
+      </div>
+    </main>
+  </div>
+
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

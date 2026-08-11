@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+.venv/
+venv/
+build/
+dist/
+
+# Catalog databases -- these are local outputs of analysis, not source.
+*.sqlite
+*.sqlite3
+*.db
+
+# Source audio -- muzek never stores the songs it analyzes, only the
+# derived patterns/colors, so audio files never belong in this repo either.
+*.mp3
+*.wav
+*.flac
+*.m4a
+*.ogg
+*.aac
+
+# Editor / OS cruft
+.DS_Store
+Thumbs.db
