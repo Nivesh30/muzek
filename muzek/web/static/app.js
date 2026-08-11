@@ -33,6 +33,7 @@ const uploadCancelBtn = document.getElementById("upload-cancel");
 const uploadErrorEl = document.getElementById("upload-error");
 
 const similarSongsEl = document.getElementById("similar-songs");
+const insightsEl = document.getElementById("insights");
 
 let songsCache = [];
 let selectedIds = new Set();
@@ -233,6 +234,9 @@ function buildTimelineBlocks(container, breakdown, onClick) {
     block.style.animationDelay = `${i * 45}ms`;
     block.textContent = seg.label;
     block.title = `${seg.label}  ${formatSeconds(seg.start)}–${formatSeconds(seg.end)}`;
+    block.dataset.start = seg.start;
+    block.dataset.end = seg.end;
+    block.dataset.segIndex = String(i);
     if (onClick) block.addEventListener("click", () => onClick(seg, hex));
     container.appendChild(block);
   });
@@ -355,18 +359,146 @@ function showDetail(seg, hex) {
 // ---------- compare view ----------
 
 let scrubLineEl = null;
+let compareTrackStates = []; // { breakdown, timelineEl, readoutEl, activeIndex }
+
+function findSegmentAtTime(breakdown, time) {
+  const segments = breakdown.segments;
+  for (let i = 0; i < segments.length; i++) {
+    if (time < segments[i].end || i === segments.length - 1) return i;
+  }
+  return 0;
+}
+
+function formatReadout(seg) {
+  const f = seg.features || {};
+  return `${seg.label} &middot; ${f.key_name || "?"}${(f.mode || "").slice(0, 1)} &middot; nrg ${f.energy_mean != null ? f.energy_mean.toFixed(2) : "?"} &middot; ${f.tempo_bpm ? f.tempo_bpm.toFixed(0) : "?"}bpm`;
+}
+
+function scrubTo(fraction) {
+  compareTrackStates.forEach((state) => {
+    const time = fraction * state.breakdown.song.duration_seconds;
+    const index = findSegmentAtTime(state.breakdown, time);
+    if (index === state.activeIndex) return;
+
+    const prevBlock = state.timelineEl.children[state.activeIndex];
+    if (prevBlock) prevBlock.classList.remove("scrub-active");
+    const nextBlock = state.timelineEl.children[index];
+    if (nextBlock) nextBlock.classList.add("scrub-active");
+
+    state.activeIndex = index;
+    state.readoutEl.innerHTML = formatReadout(state.breakdown.segments[index]);
+    state.readoutEl.classList.remove("readout-pulse");
+    void state.readoutEl.offsetWidth;
+    state.readoutEl.classList.add("readout-pulse");
+  });
+}
+
+function clearScrub() {
+  compareTrackStates.forEach((state) => {
+    const block = state.timelineEl.children[state.activeIndex];
+    if (block) block.classList.remove("scrub-active");
+    state.activeIndex = -1;
+    state.readoutEl.textContent = "hover to inspect";
+  });
+}
 
 // Attached once, rather than re-added on every "Compare" click, so repeated
 // comparisons don't stack duplicate mousemove listeners on this container.
 compareTracksEl.addEventListener("mousemove", (e) => {
   if (!scrubLineEl) return;
   const rect = compareTracksEl.getBoundingClientRect();
-  scrubLineEl.style.left = `${e.clientX - rect.left}px`;
+  const x = e.clientX - rect.left;
+  scrubLineEl.style.left = `${x}px`;
   scrubLineEl.style.display = "block";
+  scrubTo(Math.max(0, Math.min(1, x / rect.width)));
 });
 compareTracksEl.addEventListener("mouseleave", () => {
   if (scrubLineEl) scrubLineEl.style.display = "none";
+  clearScrub();
 });
+
+function weightedMean(segments, key) {
+  const totalWeight = segments.reduce((sum, s) => sum + (s.end - s.start), 0) || 1;
+  return segments.reduce((sum, s) => sum + (s.features?.[key] ?? 0) * (s.end - s.start), 0) / totalWeight;
+}
+
+function summarizeSong(breakdown) {
+  const segments = breakdown.segments;
+  return {
+    id: breakdown.song.id,
+    title: breakdown.song.title || "(untitled)",
+    energy: weightedMean(segments, "energy_mean"),
+    brightness: weightedMean(segments, "spectral_centroid_mean"),
+    tempo: weightedMean(segments, "tempo_bpm"),
+    onsetDensity: weightedMean(segments, "onset_density"),
+    sectionCount: segments.length,
+    uniqueSections: new Set(segments.map((s) => s.label)).size,
+  };
+}
+
+const INSIGHT_METRICS = [
+  { key: "energy", label: "Most energetic", color: "#f472b6", format: (v) => v.toFixed(2) },
+  { key: "brightness", label: "Brightest", color: "#facc15", format: (v) => `${v.toFixed(0)}Hz` },
+  { key: "tempo", label: "Fastest", color: "#38bdf8", format: (v) => `${v.toFixed(0)}bpm` },
+  { key: "onsetDensity", label: "Busiest", color: "#34d399", format: (v) => `${v.toFixed(1)}/s` },
+  { key: "uniqueSections", label: "Most structurally varied", color: "#a78bfa", format: (v) => `${v} sections` },
+];
+
+async function renderInsights(breakdowns) {
+  insightsEl.innerHTML = "";
+  const summaries = breakdowns.map(summarizeSong);
+
+  const leaderboards = document.createElement("div");
+  leaderboards.className = "insight-leaderboards";
+  INSIGHT_METRICS.forEach((metric, mi) => {
+    const max = Math.max(...summaries.map((s) => s[metric.key]));
+    const block = document.createElement("div");
+    block.className = "insight-metric insight-enter";
+    block.style.animationDelay = `${mi * 70}ms`;
+    block.innerHTML = `<div class="insight-metric-label">${metric.label}</div>`;
+    const ranked = [...summaries].sort((a, b) => b[metric.key] - a[metric.key]);
+    ranked.forEach((s, i) => {
+      const row = document.createElement("div");
+      row.className = "insight-row";
+      row.innerHTML = `
+        <span class="insight-row-title">${i === 0 ? "&#9733;" : ""} ${escapeHtml(s.title)}</span>
+        <div class="insight-row-bar"><div class="insight-row-fill" style="background:${metric.color}; width:0%"></div></div>
+        <span class="insight-row-value">${metric.format(s[metric.key])}</span>
+      `;
+      block.appendChild(row);
+      const fill = row.querySelector(".insight-row-fill");
+      const pct = max > 0 ? (s[metric.key] / max) * 100 : 0;
+      requestAnimationFrame(() => setTimeout(() => { fill.style.width = `${pct}%`; }, mi * 70 + 150));
+    });
+    leaderboards.appendChild(block);
+  });
+  insightsEl.appendChild(leaderboards);
+
+  const ids = breakdowns.map((b) => b.song.id);
+  const res = await fetch(`/api/similarity-matrix?ids=${ids.join(",")}`);
+  const { pairs } = await res.json();
+  if (pairs.length === 0) return;
+
+  const titleById = new Map(summaries.map((s) => [s.id, s.title]));
+  const pairsWrap = document.createElement("div");
+  pairsWrap.className = "insight-pairs insight-enter";
+  pairsWrap.style.animationDelay = `${INSIGHT_METRICS.length * 70}ms`;
+  pairsWrap.innerHTML = `<div class="insight-metric-label">Pairwise similarity</div>`;
+  [...pairs].sort((a, b) => b.similarity - a.similarity).forEach((pair, i) => {
+    const pct = Math.round(Math.max(0, Math.min(1, pair.similarity)) * 100);
+    const row = document.createElement("div");
+    row.className = "insight-row";
+    row.innerHTML = `
+      <span class="insight-row-title">${escapeHtml(titleById.get(pair.a))} &harr; ${escapeHtml(titleById.get(pair.b))}</span>
+      <div class="insight-row-bar"><div class="insight-row-fill" style="background:#a78bfa; width:0%"></div></div>
+      <span class="insight-row-value">${pct}%</span>
+    `;
+    pairsWrap.appendChild(row);
+    const fill = row.querySelector(".insight-row-fill");
+    requestAnimationFrame(() => setTimeout(() => { fill.style.width = `${pct}%`; }, i * 70 + 150));
+  });
+  insightsEl.appendChild(pairsWrap);
+}
 
 async function runCompare(ids) {
   selectedIds = new Set(ids);
@@ -378,6 +510,7 @@ async function runCompare(ids) {
   );
 
   compareTracksEl.innerHTML = "";
+  compareTrackStates = [];
   document.querySelectorAll(".song-list-item").forEach((el) => el.classList.remove("active"));
 
   breakdowns.forEach((breakdown, trackIndex) => {
@@ -388,6 +521,7 @@ async function runCompare(ids) {
     track.innerHTML = `
       <div class="compare-track-label">
         <span class="compare-track-title">${escapeHtml(song.title || "(untitled)")}</span>
+        <span class="compare-track-readout">hover to inspect</span>
         <span class="compare-track-duration">${formatSeconds(song.duration_seconds)}</span>
       </div>
     `;
@@ -402,12 +536,20 @@ async function runCompare(ids) {
     track.appendChild(graphs);
 
     compareTracksEl.appendChild(track);
+
+    compareTrackStates.push({
+      breakdown,
+      timelineEl: timeline,
+      readoutEl: track.querySelector(".compare-track-readout"),
+      activeIndex: -1,
+    });
   });
 
   scrubLineEl = document.createElement("div");
   scrubLineEl.className = "scrub-line";
   compareTracksEl.appendChild(scrubLineEl);
 
+  renderInsights(breakdowns);
   setMode("compare");
 }
 

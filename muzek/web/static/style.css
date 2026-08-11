@@ -471,12 +471,21 @@ h1, h2, h3 {
 }
 
 .segment-block-enter {
-  opacity: 0;
-  transform: scaleY(0.3);
   animation: blockGrowIn 0.5s cubic-bezier(0.22, 0.8, 0.2, 1) forwards;
 }
 
+/* The 0% state lives in the keyframe, not as a plain property on
+   .segment-block-enter -- a later class (e.g. .scrub-active) with its own
+   `animation` shorthand can win specificity and replace this animation
+   entirely. If opacity:0 were a plain base property here, that would leave
+   the block permanently invisible once its entrance animation is preempted.
+   Keeping it keyframe-only means preempting the animation just reverts to
+   the element's normal (visible) default instead. */
 @keyframes blockGrowIn {
+  from {
+    opacity: 0;
+    transform: scaleY(0.3);
+  }
   to {
     opacity: 1;
     transform: scaleY(1);
@@ -779,6 +788,96 @@ h1, h2, h3 {
   font-size: 12.5px;
 }
 
+/* ---------- Insights ---------- */
+
+.insights-section {
+  margin: 22px 0 32px;
+}
+
+.insights-section h3 {
+  font-size: 12px;
+  color: var(--text-dimmer);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 12px;
+  font-family: "Inter", sans-serif;
+  font-weight: 600;
+}
+
+.insights {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.insight-leaderboards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+
+.insight-metric,
+.insight-pairs {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+
+.insight-pairs {
+  grid-column: 1 / -1;
+}
+
+.insight-enter {
+  opacity: 0;
+  transform: translateY(8px);
+  animation: fadeSlideUp 0.45s cubic-bezier(0.22, 0.8, 0.2, 1) forwards;
+}
+
+.insight-metric-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  font-family: "Sora", sans-serif;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+}
+
+.insight-row {
+  display: grid;
+  grid-template-columns: 1fr 120px 44px;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  padding: 4px 0;
+}
+
+.insight-row-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+}
+
+.insight-row-bar {
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.insight-row-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 700ms cubic-bezier(0.22, 0.8, 0.2, 1);
+}
+
+.insight-row-value {
+  text-align: right;
+  color: var(--text-dimmer);
+  font-family: "Inter", monospace;
+  font-size: 11px;
+}
+
 /* ---------- Compare view ---------- */
 
 .compare-tracks {
@@ -815,6 +914,26 @@ h1, h2, h3 {
 .compare-track-duration {
   color: var(--text-dimmer);
   font-size: 11.5px;
+  flex-shrink: 0;
+}
+
+.compare-track-readout {
+  flex: 1;
+  text-align: center;
+  color: var(--accent);
+  font-size: 11.5px;
+  font-family: "Inter", monospace;
+  opacity: 0.85;
+}
+
+.readout-pulse {
+  animation: readoutPulse 0.35s ease;
+}
+
+@keyframes readoutPulse {
+  0% { opacity: 0; transform: scale(0.92); }
+  60% { opacity: 1; transform: scale(1.03); }
+  100% { opacity: 0.85; transform: scale(1); }
 }
 
 .compare-timeline {
@@ -828,6 +947,20 @@ h1, h2, h3 {
 
 .compare-timeline .segment-block {
   font-size: 11px;
+}
+
+.segment-block.scrub-active {
+  outline: 2px solid rgba(255, 255, 255, 0.85);
+  outline-offset: -2px;
+  filter: brightness(1.2) saturate(1.15);
+  z-index: 3;
+  animation: scrubPulse 0.4s ease;
+}
+
+@keyframes scrubPulse {
+  0% { transform: scaleY(1); }
+  40% { transform: scaleY(1.08); }
+  100% { transform: scaleY(1); }
 }
 
 .scrub-line {

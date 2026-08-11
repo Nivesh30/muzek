@@ -34,6 +34,12 @@ only the derived patterns and colors, in a local SQLite database.
 - **Web UI** — drag-and-drop (or batch) ingestion, an animated color timeline
   per song, quantitative feature graphs, a similar-songs panel, and a compare
   view that stacks multiple songs' timelines and graphs for direct comparison
+- **Interactive comparison** — hovering any stacked track scrubs all of them
+  together, live-highlighting whichever section each song is in at that
+  normalized position and reading out its key/energy/tempo; an insights
+  panel surfaces cross-song takeaways (most energetic, brightest, fastest,
+  busiest, most structurally varied, and pairwise similarity) the moment you
+  open compare view
 
 ![Compare view](docs/screenshots/compare.png)
 
@@ -75,7 +81,8 @@ Then open `http://127.0.0.1:5000`. From there you can:
 - Click a song to see its color timeline, quantitative feature graphs, full
   palette, and its most similar cataloged songs
 - Check two or more songs and click **Compare** to stack their timelines and
-  graphs, with a scrub-line that sweeps across all of them at once
+  graphs; hover to scrub all of them at once, or read the insights panel for
+  cross-song takeaways
 - Deep-link a specific view: `?song=<id>` or `?compare=<id1>,<id2>,...`
 
 ## Architecture

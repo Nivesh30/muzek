@@ -15,7 +15,7 @@ from werkzeug.utils import secure_filename
 
 from ..catalog import db
 from ..pipeline import analyze_song
-from ..similarity import build_song_vector, rank_similar
+from ..similarity import build_song_vector, cosine_similarity, rank_similar
 
 MAX_UPLOAD_BYTES = 100 * 1024 * 1024  # 100MB
 
@@ -79,6 +79,30 @@ def create_app(db_path: str) -> Flask:
             if sid in songs_by_id
         ]
         return jsonify(result)
+
+    @app.route("/api/similarity-matrix")
+    def api_similarity_matrix():
+        raw_ids = request.args.get("ids", "")
+        ids = [int(x) for x in raw_ids.split(",") if x.strip().isdigit()]
+        if len(ids) < 2:
+            return jsonify({"pairs": []})
+
+        with db.connect(app.config["DB_PATH"]) as conn:
+            db.init_schema(conn)
+            segments_by_song = db.get_all_segment_features(conn)
+            vectors = {
+                sid: vec
+                for sid in ids
+                if sid in segments_by_song and (vec := build_song_vector(segments_by_song[sid])) is not None
+            }
+
+        pairs = []
+        for i, a in enumerate(ids):
+            for b in ids[i + 1 :]:
+                if a in vectors and b in vectors:
+                    pairs.append({"a": a, "b": b, "similarity": cosine_similarity(vectors[a], vectors[b])})
+
+        return jsonify({"pairs": pairs})
 
     @app.route("/api/analyze", methods=["POST"])
     def api_analyze():
