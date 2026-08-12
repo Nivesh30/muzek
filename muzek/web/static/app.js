@@ -370,7 +370,7 @@ function setActiveGene(breakdown, index) {
   const seg = breakdown.segments[index];
   const hex = seg.colors[0] ? seg.colors[0].hex : "#333333";
 
-  dnaHelixEl.querySelectorAll(".dna-rung").forEach((el) => {
+  dnaHelixEl.querySelectorAll(".dna-rung, .dna-rung-hit").forEach((el) => {
     el.classList.toggle("active", Number(el.dataset.index) === index);
   });
   dnaSequenceEl.querySelectorAll(".dna-chip").forEach((el) => {
@@ -384,48 +384,113 @@ function setActiveGene(breakdown, index) {
   showDetail(seg, hex);
 }
 
+// A static, real-looking double helix: two continuous sine-wave backbone
+// strands (180 degrees out of phase) sampled at fine resolution for a smooth
+// curve, with a colored rung -- one per gene -- connecting the strands at
+// that gene's twist position.
 function renderDna(breakdown) {
   const segments = breakdown.segments;
+  const n = segments.length;
 
-  dnaHelixEl.classList.remove("dna-ready");
-  dnaHelixEl.innerHTML = "";
   dnaSequenceEl.innerHTML = "";
   dnaActiveIndex = -1;
 
-  const radius = 70;
-  const angleStep = 40; // degrees of twist per gene
-  const spacing = 34; // vertical px per gene
-  const padding = 18;
-  const height = segments.length * spacing + padding * 2;
+  const width = 220;
+  const amplitude = 60;
+  const centerX = width / 2;
+  const spacing = 36; // vertical px per gene
+  const padding = 24;
+  const totalTwists = Math.max(2, n / 4); // ~4 genes per full twist
+  const height = n * spacing + padding * 2;
 
-  dnaHelixEl.style.height = `${height}px`;
-  dnaCaptionEl.textContent = `${segments.length} genes · hover to pause, click to inspect`;
+  const phaseAt = (y) => ((y - padding) / (height - padding * 2)) * totalTwists * Math.PI * 2;
+  const strandX = (y, sign) => centerX + sign * amplitude * Math.sin(phaseAt(y));
 
-  const spine = document.createElement("div");
-  spine.className = "dna-spine";
+  const samplePath = (sign) => {
+    const step = 4;
+    let d = "";
+    for (let y = 0; y <= height; y += step) {
+      const x = strandX(y, sign);
+      d += `${y === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)} `;
+    }
+    return d;
+  };
+
+  dnaCaptionEl.textContent = `${n} genes · click a gene to inspect`;
+
+  const svgns = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(svgns, "svg");
+  svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+  svg.setAttribute("class", "dna-svg dna-enter");
+
+  const makeStrand = (sign) => {
+    const path = document.createElementNS(svgns, "path");
+    path.setAttribute("d", samplePath(sign));
+    path.setAttribute("class", "dna-strand");
+    return path;
+  };
+  svg.appendChild(makeStrand(-1));
+  svg.appendChild(makeStrand(1));
 
   segments.forEach((seg, i) => {
     const hex = seg.colors[0] ? seg.colors[0].hex : "#888888";
-    const rung = document.createElement("div");
-    rung.className = "dna-rung";
+    const y = padding + (i + 0.5) * spacing;
+    const xa = strandX(y, -1);
+    const xb = strandX(y, 1);
+
+    // A wide invisible line makes the thin colored rung easy to click/hover.
+    const hit = document.createElementNS(svgns, "line");
+    hit.setAttribute("x1", xa);
+    hit.setAttribute("y1", y);
+    hit.setAttribute("x2", xb);
+    hit.setAttribute("y2", y);
+    hit.setAttribute("class", "dna-rung-hit");
+    hit.dataset.index = String(i);
+
+    const rung = document.createElementNS(svgns, "line");
+    rung.setAttribute("x1", xa);
+    rung.setAttribute("y1", y);
+    rung.setAttribute("x2", xb);
+    rung.setAttribute("y2", y);
+    rung.setAttribute("class", "dna-rung");
+    rung.setAttribute("stroke", hex);
+    rung.style.color = hex; // drop-shadow(currentColor) glow matches the stroke
     rung.dataset.index = String(i);
-    rung.style.top = `${i * spacing + padding}px`;
-    rung.style.width = `${radius * 2}px`;
-    rung.style.marginLeft = `-${radius}px`;
-    rung.style.transform = `rotateY(${i * angleStep}deg)`;
-    rung.style.background = hex;
-    rung.style.color = hex; // drives the currentColor glow
-    rung.title = `${seg.label} · ${seg.codon ? seg.codon.code : ""}`;
 
-    const left = document.createElement("span");
-    left.className = "dna-node dna-node-left";
-    const right = document.createElement("span");
-    right.className = "dna-node dna-node-right";
-    rung.appendChild(left);
-    rung.appendChild(right);
+    const nodeA = document.createElementNS(svgns, "circle");
+    nodeA.setAttribute("cx", xa);
+    nodeA.setAttribute("cy", y);
+    nodeA.setAttribute("r", 4);
+    nodeA.setAttribute("class", "dna-node");
 
-    rung.addEventListener("click", () => setActiveGene(breakdown, i));
-    spine.appendChild(rung);
+    const nodeB = document.createElementNS(svgns, "circle");
+    nodeB.setAttribute("cx", xb);
+    nodeB.setAttribute("cy", y);
+    nodeB.setAttribute("r", 4);
+    nodeB.setAttribute("class", "dna-node");
+
+    const title = document.createElementNS(svgns, "title");
+    title.textContent = `${seg.label} · ${seg.codon ? seg.codon.code : ""}`;
+    hit.appendChild(title);
+
+    const onEnter = () => {
+      rung.classList.add("hover");
+      nodeA.classList.add("hover");
+      nodeB.classList.add("hover");
+    };
+    const onLeave = () => {
+      rung.classList.remove("hover");
+      nodeA.classList.remove("hover");
+      nodeB.classList.remove("hover");
+    };
+    hit.addEventListener("mouseenter", onEnter);
+    hit.addEventListener("mouseleave", onLeave);
+    hit.addEventListener("click", () => setActiveGene(breakdown, i));
+
+    svg.appendChild(rung);
+    svg.appendChild(nodeA);
+    svg.appendChild(nodeB);
+    svg.appendChild(hit);
 
     const chip = document.createElement("div");
     chip.className = "dna-chip";
@@ -437,14 +502,8 @@ function renderDna(breakdown) {
     dnaSequenceEl.appendChild(chip);
   });
 
-  dnaHelixEl.appendChild(spine);
-
-  dnaHelixEl.addEventListener("mouseenter", () => spine.classList.add("dna-paused"));
-  dnaHelixEl.addEventListener("mouseleave", () => spine.classList.remove("dna-paused"));
-
-  requestAnimationFrame(() => {
-    dnaHelixEl.classList.add("dna-ready");
-  });
+  dnaHelixEl.innerHTML = "";
+  dnaHelixEl.appendChild(svg);
 }
 
 // ---------- compare view ----------
