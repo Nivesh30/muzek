@@ -59,18 +59,21 @@
           </div>
         </header>
 
-        <div id="timeline" class="timeline"></div>
+        <div class="timeline-frame bracket-frame">
+          <div id="timeline" class="timeline"></div>
+        </div>
         <div id="timeline-ruler" class="timeline-ruler"></div>
 
-        <div id="detail-panel" class="detail-panel hidden"></div>
+        <div id="detail-panel" class="detail-panel bracket-frame hidden"></div>
 
         <section class="dna-section">
           <div class="panel-label">
             <h3>DNA</h3>
             <span class="panel-label-meta" id="dna-caption"></span>
           </div>
-          <div class="dna-helix" id="dna-helix"></div>
+          <div class="dna-helix bracket-frame" id="dna-helix"></div>
           <div class="dna-sequence" id="dna-sequence"></div>
+          <p class="dna-legend">L/M/H &mdash; energy &middot; brightness tier &nbsp;&nbsp; 1&ndash;4 &mdash; rhythm density tier</p>
         </section>
 
         <section class="graphs-section">
@@ -93,7 +96,7 @@
         <header class="song-header">
           <div>
             <h2>Comparing <span id="compare-title-count"></span> songs</h2>
-            <span class="song-meta">Timelines are normalized to duration &mdash; hover any track to scrub all of them together</span>
+            <span class="song-meta song-meta-prose">Timelines are normalized to duration &mdash; hover any track to scrub all of them together</span>
           </div>
         </header>
 

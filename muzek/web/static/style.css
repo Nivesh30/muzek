@@ -78,6 +78,34 @@ h1, h2, h3 {
   white-space: nowrap;
 }
 
+/* Targeting-reticle corner brackets on the four corners of a panel -- built
+   from layered backgrounds (not extra DOM nodes) so it can drop onto any
+   container. Reinforces the "instrument readout" framing on the panels that
+   carry the most information (color timeline, DNA ring, detail readout). */
+.bracket-frame {
+  --bracket-color: rgba(167, 139, 250, 0.45);
+  background-image:
+    linear-gradient(var(--bracket-color), var(--bracket-color)),
+    linear-gradient(var(--bracket-color), var(--bracket-color)),
+    linear-gradient(var(--bracket-color), var(--bracket-color)),
+    linear-gradient(var(--bracket-color), var(--bracket-color)),
+    linear-gradient(var(--bracket-color), var(--bracket-color)),
+    linear-gradient(var(--bracket-color), var(--bracket-color)),
+    linear-gradient(var(--bracket-color), var(--bracket-color)),
+    linear-gradient(var(--bracket-color), var(--bracket-color));
+  background-repeat: no-repeat;
+  background-size:
+    14px 2px, 2px 14px,
+    14px 2px, 2px 14px,
+    14px 2px, 2px 14px,
+    14px 2px, 2px 14px;
+  background-position:
+    top left, top left,
+    top right, top right,
+    bottom left, bottom left,
+    bottom right, bottom right;
+}
+
 .layout {
   display: flex;
   min-height: 100vh;
@@ -235,6 +263,7 @@ h1, h2, h3 {
 
 .upload-queue-status {
   font-size: 10.5px;
+  font-family: var(--mono);
   color: var(--text-dimmer);
   flex-shrink: 0;
   min-width: 58px;
@@ -358,11 +387,12 @@ h1, h2, h3 {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 9px 10px;
-  border-radius: 10px;
+  padding: 9px 10px 9px 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: 13.5px;
-  border: 1px solid transparent;
+  border-left: 2px solid transparent;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .song-list-item:hover {
@@ -370,8 +400,8 @@ h1, h2, h3 {
 }
 
 .song-list-item.active {
-  background: rgba(167, 139, 250, 0.1);
-  border-color: var(--accent-soft);
+  background: rgba(167, 139, 250, 0.08);
+  border-left-color: var(--accent);
 }
 
 .song-checkbox {
@@ -398,7 +428,8 @@ h1, h2, h3 {
 
 .song-list-duration {
   color: var(--text-dimmer);
-  font-size: 11.5px;
+  font-size: 11px;
+  font-family: var(--mono);
 }
 
 .song-list-empty {
@@ -440,11 +471,21 @@ h1, h2, h3 {
 }
 
 .song-meta {
-  font-size: 12.5px;
+  font-size: 12px;
+  font-family: var(--mono);
   color: var(--text-dim);
 }
 
+.song-meta-prose {
+  font-family: "Inter", sans-serif;
+  font-size: 12.5px;
+}
+
 /* ---------- Single timeline ---------- */
+
+.timeline-frame {
+  padding: 6px;
+}
 
 .timeline {
   display: flex;
@@ -563,11 +604,10 @@ h1, h2, h3 {
   display: flex;
   gap: 22px;
   align-items: flex-start;
-  background: var(--panel);
+  background: var(--bg-elevated);
   border: 1px solid var(--panel-border);
   border-radius: var(--radius);
   padding: 18px 22px;
-  backdrop-filter: blur(8px);
 }
 
 .detail-panel-enter {
@@ -601,6 +641,7 @@ h1, h2, h3 {
   font-size: 15px;
   margin-top: 3px;
   font-weight: 500;
+  font-family: var(--mono);
 }
 
 /* ---------- Feature graphs ---------- */
@@ -794,6 +835,14 @@ h1, h2, h3 {
   margin-top: 18px;
 }
 
+.dna-legend {
+  text-align: center;
+  font-size: 10px;
+  font-family: var(--mono);
+  color: var(--text-dimmer);
+  margin: 10px 0 0;
+}
+
 .dna-chip {
   font-family: "Inter", monospace;
   font-size: 11px;
@@ -911,7 +960,8 @@ h1, h2, h3 {
 }
 
 .similar-song-duration {
-  font-size: 11.5px;
+  font-size: 11px;
+  font-family: var(--mono);
   color: var(--text-dimmer);
 }
 
@@ -1068,7 +1118,8 @@ h1, h2, h3 {
 
 .compare-track-duration {
   color: var(--text-dimmer);
-  font-size: 11.5px;
+  font-size: 11px;
+  font-family: var(--mono);
   flex-shrink: 0;
 }
 
