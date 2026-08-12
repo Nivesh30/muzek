@@ -40,6 +40,12 @@ only the derived patterns and colors, in a local SQLite database.
   panel surfaces cross-song takeaways (most energetic, brightest, fastest,
   busiest, most structurally varied, and pairwise similarity) the moment you
   open compare view
+- **Song DNA** — each section is encoded into a short genetic-style codon
+  (key, mode, energy/brightness/rhythm tier — e.g. `F#mHM3`), strung together
+  into the song's "genome" and rendered as an animated, clickable double
+  helix. Hover to pause the spin, click a gene (or its chip in the sequence
+  strip below) to inspect it — synced with the color timeline and detail
+  panel
 
 ![Compare view](docs/screenshots/compare.png)
 
@@ -66,6 +72,9 @@ muzek list
 
 # Print a song's full breakdown as JSON
 muzek show 1
+
+# Print a song's DNA: one codon per section, plus the full sequence
+muzek dna 1
 ```
 
 ### Web UI
@@ -78,8 +87,9 @@ Then open `http://127.0.0.1:5000`. From there you can:
 
 - Drop one or more songs onto the sidebar to analyze them (sequentially, so
   the single-writer SQLite catalog never sees concurrent writes)
-- Click a song to see its color timeline, quantitative feature graphs, full
-  palette, and its most similar cataloged songs
+- Click a song to see its color timeline, its DNA (an animated double helix,
+  clickable gene by gene), quantitative feature graphs, full palette, and its
+  most similar cataloged songs
 - Check two or more songs and click **Compare** to stack their timelines and
   graphs; hover to scrub all of them at once, or read the insights panel for
   cross-song takeaways
@@ -97,14 +107,15 @@ muzek/
     structure.py         # beat-synced segmentation + repeat labeling
   color/
     mapping.py            # feature -> color, versioned algorithms
-  similarity.py             # cross-song similarity scoring
+  dna.py                    # feature -> genetic-style codon, per section
+  similarity.py               # cross-song similarity scoring
   catalog/
-    db.py                    # SQLite schema + queries (patterns only, no audio)
-  pipeline.py                 # orchestrates analysis end to end
-  cli.py                        # `muzek analyze|list|show|serve`
+    db.py                      # SQLite schema + queries (patterns only, no audio)
+  pipeline.py                   # orchestrates analysis end to end
+  cli.py                          # `muzek analyze|list|show|dna|serve`
   web/
-    app.py                      # Flask app: catalog API + upload endpoint
-    templates/, static/          # UI: timeline, graphs, compare, similarity
+    app.py                        # Flask app: catalog API + upload endpoint
+    templates/, static/            # UI: timeline, DNA, graphs, compare, similarity
 ```
 
 Analysis flow: `audio.py` loads a file into memory → `features/*` extract

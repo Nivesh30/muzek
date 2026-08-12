@@ -35,6 +35,10 @@ const uploadErrorEl = document.getElementById("upload-error");
 const similarSongsEl = document.getElementById("similar-songs");
 const insightsEl = document.getElementById("insights");
 
+const dnaHelixEl = document.getElementById("dna-helix");
+const dnaSequenceEl = document.getElementById("dna-sequence");
+const dnaCaptionEl = document.getElementById("dna-caption");
+
 let songsCache = [];
 let selectedIds = new Set();
 
@@ -160,6 +164,7 @@ function renderSong(breakdown) {
   paletteEl.innerHTML = "";
   buildTimelineBlocks(timelineEl, breakdown, (seg, hex) => showDetail(seg, hex));
   renderFeatureGraphs(featureGraphsEl, breakdown);
+  renderDna(breakdown);
 
   breakdown.segments.forEach((seg, i) => {
     const hex = seg.colors[0] ? seg.colors[0].hex : "#333333";
@@ -352,8 +357,94 @@ function showDetail(seg, hex) {
       <div><span class="detail-label">Brightness</span><span class="detail-value">${f.spectral_centroid_mean != null ? f.spectral_centroid_mean.toFixed(0) + " Hz" : "?"}</span></div>
       <div><span class="detail-label">Onset density</span><span class="detail-value">${f.onset_density != null ? f.onset_density.toFixed(2) + "/s" : "?"}</span></div>
       <div><span class="detail-label">Color</span><span class="detail-value">${hex}</span></div>
+      <div><span class="detail-label">Codon</span><span class="detail-value">${seg.codon ? seg.codon.code : "?"}</span></div>
     </div>
   `;
+}
+
+// ---------- DNA ----------
+
+let dnaActiveIndex = -1;
+
+function setActiveGene(breakdown, index) {
+  const seg = breakdown.segments[index];
+  const hex = seg.colors[0] ? seg.colors[0].hex : "#333333";
+
+  dnaHelixEl.querySelectorAll(".dna-rung").forEach((el) => {
+    el.classList.toggle("active", Number(el.dataset.index) === index);
+  });
+  dnaSequenceEl.querySelectorAll(".dna-chip").forEach((el) => {
+    el.classList.toggle("active", Number(el.dataset.index) === index);
+  });
+  timelineEl.querySelectorAll(".segment-block").forEach((el) => {
+    el.classList.toggle("selected", Number(el.dataset.segIndex) === index);
+  });
+
+  dnaActiveIndex = index;
+  showDetail(seg, hex);
+}
+
+function renderDna(breakdown) {
+  const segments = breakdown.segments;
+
+  dnaHelixEl.classList.remove("dna-ready");
+  dnaHelixEl.innerHTML = "";
+  dnaSequenceEl.innerHTML = "";
+  dnaActiveIndex = -1;
+
+  const radius = 70;
+  const angleStep = 40; // degrees of twist per gene
+  const spacing = 34; // vertical px per gene
+  const padding = 18;
+  const height = segments.length * spacing + padding * 2;
+
+  dnaHelixEl.style.height = `${height}px`;
+  dnaCaptionEl.textContent = `${segments.length} genes · hover to pause, click to inspect`;
+
+  const spine = document.createElement("div");
+  spine.className = "dna-spine";
+
+  segments.forEach((seg, i) => {
+    const hex = seg.colors[0] ? seg.colors[0].hex : "#888888";
+    const rung = document.createElement("div");
+    rung.className = "dna-rung";
+    rung.dataset.index = String(i);
+    rung.style.top = `${i * spacing + padding}px`;
+    rung.style.width = `${radius * 2}px`;
+    rung.style.marginLeft = `-${radius}px`;
+    rung.style.transform = `rotateY(${i * angleStep}deg)`;
+    rung.style.background = hex;
+    rung.style.color = hex; // drives the currentColor glow
+    rung.title = `${seg.label} · ${seg.codon ? seg.codon.code : ""}`;
+
+    const left = document.createElement("span");
+    left.className = "dna-node dna-node-left";
+    const right = document.createElement("span");
+    right.className = "dna-node dna-node-right";
+    rung.appendChild(left);
+    rung.appendChild(right);
+
+    rung.addEventListener("click", () => setActiveGene(breakdown, i));
+    spine.appendChild(rung);
+
+    const chip = document.createElement("div");
+    chip.className = "dna-chip";
+    chip.dataset.index = String(i);
+    chip.style.setProperty("--chip-color", hex);
+    chip.textContent = seg.codon ? seg.codon.code : "?";
+    chip.title = `${seg.label}  ${formatSeconds(seg.start)}–${formatSeconds(seg.end)}`;
+    chip.addEventListener("click", () => setActiveGene(breakdown, i));
+    dnaSequenceEl.appendChild(chip);
+  });
+
+  dnaHelixEl.appendChild(spine);
+
+  dnaHelixEl.addEventListener("mouseenter", () => spine.classList.add("dna-paused"));
+  dnaHelixEl.addEventListener("mouseleave", () => spine.classList.remove("dna-paused"));
+
+  requestAnimationFrame(() => {
+    dnaHelixEl.classList.add("dna-ready");
+  });
 }
 
 // ---------- compare view ----------

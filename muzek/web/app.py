@@ -14,8 +14,15 @@ from flask import Flask, jsonify, render_template, request
 from werkzeug.utils import secure_filename
 
 from ..catalog import db
+from ..dna import encode_codon
 from ..pipeline import analyze_song
 from ..similarity import build_song_vector, cosine_similarity, rank_similar
+
+
+def _with_codons(breakdown: dict) -> dict:
+    for segment in breakdown["segments"]:
+        segment["codon"] = encode_codon(segment.get("features") or {})
+    return breakdown
 
 MAX_UPLOAD_BYTES = 100 * 1024 * 1024  # 100MB
 
@@ -49,7 +56,7 @@ def create_app(db_path: str) -> Flask:
             breakdown = db.get_breakdown(conn, song_id)
         if breakdown is None:
             return jsonify({"error": "not found"}), 404
-        return jsonify(breakdown)
+        return jsonify(_with_codons(breakdown))
 
     @app.route("/api/songs/<int:song_id>/similar")
     def api_similar(song_id: int):
@@ -128,6 +135,6 @@ def create_app(db_path: str) -> Flask:
         finally:
             os.remove(tmp_path)
 
-        return jsonify(breakdown), 201
+        return jsonify(_with_codons(breakdown)), 201
 
     return app

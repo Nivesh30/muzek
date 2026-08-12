@@ -6,6 +6,7 @@ from pathlib import Path
 import click
 
 from .catalog import db
+from .dna import encode_codon
 from .pipeline import analyze_song
 
 
@@ -72,6 +73,27 @@ def show(song_id: int, db_path: str) -> None:
     if breakdown is None:
         raise click.ClickException(f"No song with id {song_id}")
     click.echo(json.dumps(breakdown, indent=2))
+
+
+@main.command()
+@click.argument("song_id", type=int)
+@click.option("--db-path", "db_path", default="catalog.sqlite", show_default=True)
+def dna(song_id: int, db_path: str) -> None:
+    """Print a song's genome: one codon per section, encoding its key, mode,
+    energy, brightness, and rhythmic density tier."""
+    with db.connect(db_path) as conn:
+        db.init_schema(conn)
+        breakdown = db.get_breakdown(conn, song_id)
+    if breakdown is None:
+        raise click.ClickException(f"No song with id {song_id}")
+
+    song = breakdown["song"]
+    segments = breakdown["segments"]
+    click.echo(f"Song #{song['id']}  {song['title'] or '(untitled)'}  ({len(segments)} genes)")
+    for seg in segments:
+        codon = encode_codon(seg["features"] or {})
+        click.echo(f"  [{seg['label']}]  {codon['code']:<8}  {seg['start']:6.1f}s - {seg['end']:6.1f}s")
+    click.echo("  sequence: " + "-".join(encode_codon(seg["features"] or {})["code"] for seg in segments))
 
 
 @main.command()
