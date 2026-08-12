@@ -38,8 +38,8 @@
         </div>
       </section>
 
-      <div class="song-list-header">
-        <span>Catalog</span>
+      <div class="panel-label">
+        <h3>Catalog</h3>
         <button class="btn btn-tiny" id="compare-btn" disabled>Compare (<span id="compare-count">0</span>)</button>
       </div>
       <ul id="song-list" class="song-list"></ul>
@@ -60,30 +60,31 @@
         </header>
 
         <div id="timeline" class="timeline"></div>
+        <div id="timeline-ruler" class="timeline-ruler"></div>
 
         <div id="detail-panel" class="detail-panel hidden"></div>
 
         <section class="dna-section">
-          <div class="dna-section-header">
+          <div class="panel-label">
             <h3>DNA</h3>
-            <span class="dna-caption" id="dna-caption"></span>
+            <span class="panel-label-meta" id="dna-caption"></span>
           </div>
           <div class="dna-helix" id="dna-helix"></div>
           <div class="dna-sequence" id="dna-sequence"></div>
         </section>
 
         <section class="graphs-section">
-          <h3>Breakdown</h3>
+          <div class="panel-label"><h3>Breakdown</h3></div>
           <div id="feature-graphs" class="feature-graphs"></div>
         </section>
 
         <section class="palette-section">
-          <h3>Palette</h3>
+          <div class="panel-label"><h3>Palette</h3></div>
           <div id="palette" class="palette"></div>
         </section>
 
         <section class="similar-section">
-          <h3>Similar songs</h3>
+          <div class="panel-label"><h3>Similar songs</h3></div>
           <div id="similar-songs" class="similar-songs"></div>
         </section>
       </div>
@@ -97,7 +98,7 @@
         </header>
 
         <section class="insights-section">
-          <h3>Insights</h3>
+          <div class="panel-label"><h3>Insights</h3></div>
           <div id="insights" class="insights"></div>
         </section>
 

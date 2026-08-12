@@ -4,6 +4,7 @@ const songViewEl = document.getElementById("song-view");
 const songTitleEl = document.getElementById("song-title");
 const songMetaEl = document.getElementById("song-meta");
 const timelineEl = document.getElementById("timeline");
+const timelineRulerEl = document.getElementById("timeline-ruler");
 const detailPanelEl = document.getElementById("detail-panel");
 const paletteEl = document.getElementById("palette");
 
@@ -163,6 +164,7 @@ function renderSong(breakdown) {
   timelineEl.innerHTML = "";
   paletteEl.innerHTML = "";
   buildTimelineBlocks(timelineEl, breakdown, (seg, hex) => showDetail(seg, hex));
+  renderTimelineRuler(timelineRulerEl, song.duration_seconds);
   renderFeatureGraphs(featureGraphsEl, breakdown);
   renderDna(breakdown);
 
@@ -247,6 +249,29 @@ function buildTimelineBlocks(container, breakdown, onClick) {
   });
 }
 
+// Picks a "nice" tick interval (5s/10s/15s/30s/1m/2m/5m/10m) that keeps the
+// ruler to roughly 5-8 ticks regardless of song length.
+function pickTickInterval(duration) {
+  const candidates = [5, 10, 15, 30, 60, 120, 300, 600, 900];
+  for (const seconds of candidates) {
+    if (duration / seconds <= 8) return seconds;
+  }
+  return Math.ceil(duration / 8 / 900) * 900;
+}
+
+function renderTimelineRuler(container, duration) {
+  container.innerHTML = "";
+  const interval = pickTickInterval(duration);
+  for (let t = 0; t <= duration; t += interval) {
+    const pct = (t / duration) * 100;
+    const tick = document.createElement("div");
+    tick.className = "ruler-tick";
+    tick.style.left = `${pct}%`;
+    tick.innerHTML = `<span class="ruler-tick-line"></span><span class="ruler-tick-label">${formatSeconds(t)}</span>`;
+    container.appendChild(tick);
+  }
+}
+
 // Renders one feature as a step/area chart across the song's segments --
 // each segment holds a flat value for its whole duration (that's the
 // granularity the analysis produces), so a step function is the honest
@@ -278,6 +303,11 @@ function buildFeatureGraphSVG(breakdown, spec) {
   const areaPath = `${linePath} L${x.toFixed(2)},${height} L0,${height} Z`;
   const gradientId = `grad-${spec.key}-${Math.random().toString(36).slice(2, 8)}`;
 
+  // Graph-paper gridlines behind the data, like a real instrument readout.
+  const gridLines = [0.25, 0.5, 0.75]
+    .map((f) => `<line x1="0" y1="${(height * f).toFixed(1)}" x2="${width}" y2="${(height * f).toFixed(1)}" class="feature-grid-line" vector-effect="non-scaling-stroke" />`)
+    .join("");
+
   return `
     <svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" class="feature-graph-svg">
       <defs>
@@ -286,6 +316,7 @@ function buildFeatureGraphSVG(breakdown, spec) {
           <stop offset="100%" stop-color="${spec.color}" stop-opacity="0" />
         </linearGradient>
       </defs>
+      ${gridLines}
       <path class="feature-area" d="${areaPath}" fill="url(#${gradientId})" stroke="none"></path>
       <path class="feature-line" d="${linePath}" fill="none" stroke="${spec.color}" stroke-width="2" vector-effect="non-scaling-stroke"></path>
     </svg>

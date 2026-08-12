@@ -5,14 +5,16 @@
 :root {
   --bg: #0a0b0f;
   --bg-elevated: #13151b;
-  --panel: rgba(255, 255, 255, 0.03);
-  --panel-border: rgba(255, 255, 255, 0.08);
+  --panel: rgba(255, 255, 255, 0.025);
+  --panel-border: rgba(255, 255, 255, 0.1);
   --text: #eceef2;
   --text-dim: #8a8d98;
   --text-dimmer: #5c5f6b;
   --accent: #a78bfa;
   --accent-soft: rgba(167, 139, 250, 0.35);
-  --radius: 14px;
+  --mono: "Berkeley Mono", "IBM Plex Mono", "Inter", monospace;
+  --radius: 9px;
+  --radius-sm: 6px;
 }
 
 html, body {
@@ -23,8 +25,10 @@ html, body {
 body {
   font-family: "Inter", -apple-system, "Segoe UI", Roboto, sans-serif;
   background:
-    radial-gradient(circle at 15% 0%, rgba(167, 139, 250, 0.08), transparent 45%),
-    radial-gradient(circle at 85% 20%, rgba(56, 189, 248, 0.06), transparent 40%),
+    radial-gradient(circle at 12% 0%, rgba(167, 139, 250, 0.05), transparent 42%),
+    radial-gradient(circle at 88% 15%, rgba(56, 189, 248, 0.035), transparent 38%),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.025) 0, rgba(255, 255, 255, 0.025) 1px, transparent 1px, transparent 32px),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.025) 0, rgba(255, 255, 255, 0.025) 1px, transparent 1px, transparent 32px),
     var(--bg);
   color: var(--text);
 }
@@ -32,6 +36,46 @@ body {
 h1, h2, h3 {
   font-family: "Sora", "Inter", sans-serif;
   margin: 0;
+}
+
+/* Shared "instrument label" header for every section in the main column:
+   a small accent tick, an uppercase letter-spaced title, optional right-
+   aligned meta text, and a hairline rule underneath -- reads as a labeled
+   panel rather than a floating caption. */
+.panel-label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 8px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.panel-label::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  margin-right: 8px;
+  background: var(--accent);
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.panel-label h3 {
+  font-size: 11px;
+  color: var(--text-dimmer);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-family: "Inter", sans-serif;
+  font-weight: 600;
+}
+
+.panel-label-meta {
+  font-size: 11px;
+  color: var(--text-dimmer);
+  font-family: var(--mono);
+  white-space: nowrap;
 }
 
 .layout {
@@ -224,14 +268,14 @@ h1, h2, h3 {
 }
 
 .btn {
-  border: none;
-  border-radius: 8px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
   padding: 9px 14px;
   font-size: 13px;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
-  transition: transform 0.1s ease, filter 0.15s ease;
+  transition: transform 0.1s ease, filter 0.15s ease, background 0.15s ease;
 }
 
 .btn:active {
@@ -239,12 +283,12 @@ h1, h2, h3 {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #a78bfa, #818cf8);
+  background: var(--accent);
   color: #0a0b0f;
 }
 
 .btn-primary:hover {
-  filter: brightness(1.08);
+  filter: brightness(1.1);
 }
 
 .btn-ghost {
@@ -259,8 +303,10 @@ h1, h2, h3 {
 
 .btn-tiny {
   font-size: 11px;
+  font-family: var(--mono);
   padding: 5px 10px;
   background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--panel-border);
   color: var(--text-dim);
 }
 
@@ -298,17 +344,6 @@ h1, h2, h3 {
 }
 
 /* ---------- Song list ---------- */
-
-.song-list-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 6px;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-dimmer);
-}
 
 .song-list {
   list-style: none;
@@ -420,6 +455,35 @@ h1, h2, h3 {
   box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--panel-border);
 }
 
+.timeline-ruler {
+  position: relative;
+  height: 20px;
+  margin-top: 2px;
+}
+
+.ruler-tick {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.ruler-tick-line {
+  width: 1px;
+  height: 5px;
+  background: var(--panel-border);
+}
+
+.ruler-tick-label {
+  font-size: 9.5px;
+  font-family: var(--mono);
+  color: var(--text-dimmer);
+  margin-top: 3px;
+  white-space: nowrap;
+}
+
 .segment-block {
   --glow: #888;
   display: flex;
@@ -513,7 +577,7 @@ h1, h2, h3 {
 .detail-swatch {
   width: 68px;
   height: 68px;
-  border-radius: 12px;
+  border-radius: var(--radius);
   flex-shrink: 0;
   box-shadow: 0 0 30px -4px currentColor;
 }
@@ -545,16 +609,6 @@ h1, h2, h3 {
   margin-top: 32px;
 }
 
-.graphs-section h3 {
-  font-size: 12px;
-  color: var(--text-dimmer);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-bottom: 12px;
-  font-family: "Inter", sans-serif;
-  font-weight: 600;
-}
-
 .feature-graphs {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -564,7 +618,7 @@ h1, h2, h3 {
 .feature-graph {
   background: var(--panel);
   border: 1px solid var(--panel-border);
-  border-radius: 12px;
+  border-radius: var(--radius);
   padding: 12px 16px 8px;
 }
 
@@ -593,6 +647,11 @@ h1, h2, h3 {
   height: 56px;
   display: block;
   overflow: visible;
+}
+
+.feature-grid-line {
+  stroke: rgba(255, 255, 255, 0.06);
+  stroke-width: 1;
 }
 
 /* Compact variant used inside stacked compare tracks. */
@@ -636,28 +695,6 @@ h1, h2, h3 {
 
 .dna-section {
   margin-top: 32px;
-}
-
-.dna-section-header {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  margin-bottom: 4px;
-}
-
-.dna-section-header h3 {
-  font-size: 12px;
-  color: var(--text-dimmer);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-family: "Inter", sans-serif;
-  font-weight: 600;
-}
-
-.dna-caption {
-  font-size: 11.5px;
-  color: var(--text-dimmer);
-  font-family: "Inter", monospace;
 }
 
 .dna-helix {
@@ -783,15 +820,6 @@ h1, h2, h3 {
   margin-top: 36px;
 }
 
-.palette-section h3 {
-  font-size: 12px;
-  color: var(--text-dimmer);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-bottom: 12px;
-  font-family: "Inter", sans-serif;
-  font-weight: 600;
-}
 
 .palette {
   display: flex;
@@ -830,15 +858,6 @@ h1, h2, h3 {
   margin-top: 36px;
 }
 
-.similar-section h3 {
-  font-size: 12px;
-  color: var(--text-dimmer);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-bottom: 12px;
-  font-family: "Inter", sans-serif;
-  font-weight: 600;
-}
 
 .similar-songs {
   display: flex;
@@ -939,15 +958,6 @@ h1, h2, h3 {
   margin: 22px 0 32px;
 }
 
-.insights-section h3 {
-  font-size: 12px;
-  color: var(--text-dimmer);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-bottom: 12px;
-  font-family: "Inter", sans-serif;
-  font-weight: 600;
-}
 
 .insights {
   display: flex;
@@ -965,7 +975,7 @@ h1, h2, h3 {
 .insight-pairs {
   background: var(--panel);
   border: 1px solid var(--panel-border);
-  border-radius: 12px;
+  border-radius: var(--radius);
   padding: 14px 16px;
 }
 
