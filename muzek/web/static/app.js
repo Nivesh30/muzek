@@ -370,7 +370,10 @@ function setActiveGene(breakdown, index) {
   const seg = breakdown.segments[index];
   const hex = seg.colors[0] ? seg.colors[0].hex : "#333333";
 
-  dnaHelixEl.querySelectorAll(".dna-rung, .dna-rung-hit").forEach((el) => {
+  dnaHelixEl.querySelectorAll(".dna-arc, .dna-arc-hit").forEach((el) => {
+    el.classList.toggle("active", Number(el.dataset.index) === index);
+  });
+  dnaHelixEl.querySelectorAll(".dna-label").forEach((el) => {
     el.classList.toggle("active", Number(el.dataset.index) === index);
   });
   dnaSequenceEl.querySelectorAll(".dna-chip").forEach((el) => {
@@ -384,113 +387,135 @@ function setActiveGene(breakdown, index) {
   showDetail(seg, hex);
 }
 
-// A static, real-looking double helix: two continuous sine-wave backbone
-// strands (180 degrees out of phase) sampled at fine resolution for a smooth
-// curve, with a colored rung -- one per gene -- connecting the strands at
-// that gene's twist position.
+// A circular genome map (the "plasmid map" convention from real genomics
+// software): genes as proportional colored arcs around a ring, starting at
+// 12 o'clock and running clockwise, each with a leader line out to its
+// codon label so labels stay upright and legible regardless of arc angle.
 function renderDna(breakdown) {
   const segments = breakdown.segments;
   const n = segments.length;
+  const total = breakdown.song.duration_seconds;
 
   dnaSequenceEl.innerHTML = "";
   dnaActiveIndex = -1;
-
-  const width = 220;
-  const amplitude = 60;
-  const centerX = width / 2;
-  const spacing = 36; // vertical px per gene
-  const padding = 24;
-  const totalTwists = Math.max(2, n / 4); // ~4 genes per full twist
-  const height = n * spacing + padding * 2;
-
-  const phaseAt = (y) => ((y - padding) / (height - padding * 2)) * totalTwists * Math.PI * 2;
-  const strandX = (y, sign) => centerX + sign * amplitude * Math.sin(phaseAt(y));
-
-  const samplePath = (sign) => {
-    const step = 4;
-    let d = "";
-    for (let y = 0; y <= height; y += step) {
-      const x = strandX(y, sign);
-      d += `${y === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)} `;
-    }
-    return d;
-  };
-
   dnaCaptionEl.textContent = `${n} genes · click a gene to inspect`;
+
+  const size = 360;
+  const cx = size / 2;
+  const cy = size / 2;
+  const radius = 95;
+  const strokeWidth = 22;
+  const gapPx = 3;
+  const circumference = 2 * Math.PI * radius;
 
   const svgns = "http://www.w3.org/2000/svg";
   const svg = document.createElementNS(svgns, "svg");
-  svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+  svg.setAttribute("viewBox", `0 0 ${size} ${size}`);
   svg.setAttribute("class", "dna-svg dna-enter");
 
-  const makeStrand = (sign) => {
-    const path = document.createElementNS(svgns, "path");
-    path.setAttribute("d", samplePath(sign));
-    path.setAttribute("class", "dna-strand");
-    return path;
-  };
-  svg.appendChild(makeStrand(-1));
-  svg.appendChild(makeStrand(1));
+  const track = document.createElementNS(svgns, "circle");
+  track.setAttribute("cx", cx);
+  track.setAttribute("cy", cy);
+  track.setAttribute("r", radius);
+  track.setAttribute("class", "dna-ring-track");
+  svg.appendChild(track);
 
+  // Arcs live in a group rotated -90deg so fraction 0 starts at the top
+  // (12 o'clock) instead of SVG's default 3-o'clock start.
+  const arcGroup = document.createElementNS(svgns, "g");
+  arcGroup.setAttribute("transform", `rotate(-90 ${cx} ${cy})`);
+  svg.appendChild(arcGroup);
+
+  // Labels/leaders live outside that rotation so the text itself stays upright.
+  const labelGroup = document.createElementNS(svgns, "g");
+  svg.appendChild(labelGroup);
+
+  let cumulative = 0;
   segments.forEach((seg, i) => {
     const hex = seg.colors[0] ? seg.colors[0].hex : "#888888";
-    const y = padding + (i + 0.5) * spacing;
-    const xa = strandX(y, -1);
-    const xb = strandX(y, 1);
+    const fracLen = (seg.end - seg.start) / total;
+    const startFrac = cumulative;
+    cumulative += fracLen;
 
-    // A wide invisible line makes the thin colored rung easy to click/hover.
-    const hit = document.createElementNS(svgns, "line");
-    hit.setAttribute("x1", xa);
-    hit.setAttribute("y1", y);
-    hit.setAttribute("x2", xb);
-    hit.setAttribute("y2", y);
-    hit.setAttribute("class", "dna-rung-hit");
+    const arcLen = Math.max(fracLen * circumference - gapPx, 1);
+    const dashoffset = -(startFrac * circumference);
+    const dasharray = `${arcLen} ${circumference - arcLen}`;
+
+    const hit = document.createElementNS(svgns, "circle");
+    hit.setAttribute("cx", cx);
+    hit.setAttribute("cy", cy);
+    hit.setAttribute("r", radius);
+    hit.setAttribute("class", "dna-arc-hit");
+    hit.setAttribute("stroke-width", strokeWidth + 14);
+    hit.setAttribute("stroke-dasharray", dasharray);
+    hit.setAttribute("stroke-dashoffset", dashoffset);
     hit.dataset.index = String(i);
 
-    const rung = document.createElementNS(svgns, "line");
-    rung.setAttribute("x1", xa);
-    rung.setAttribute("y1", y);
-    rung.setAttribute("x2", xb);
-    rung.setAttribute("y2", y);
-    rung.setAttribute("class", "dna-rung");
-    rung.setAttribute("stroke", hex);
-    rung.style.color = hex; // drop-shadow(currentColor) glow matches the stroke
-    rung.dataset.index = String(i);
-
-    const nodeA = document.createElementNS(svgns, "circle");
-    nodeA.setAttribute("cx", xa);
-    nodeA.setAttribute("cy", y);
-    nodeA.setAttribute("r", 4);
-    nodeA.setAttribute("class", "dna-node");
-
-    const nodeB = document.createElementNS(svgns, "circle");
-    nodeB.setAttribute("cx", xb);
-    nodeB.setAttribute("cy", y);
-    nodeB.setAttribute("r", 4);
-    nodeB.setAttribute("class", "dna-node");
+    const arc = document.createElementNS(svgns, "circle");
+    arc.setAttribute("cx", cx);
+    arc.setAttribute("cy", cy);
+    arc.setAttribute("r", radius);
+    arc.setAttribute("class", "dna-arc");
+    arc.setAttribute("stroke", hex);
+    arc.setAttribute("stroke-width", strokeWidth);
+    arc.setAttribute("stroke-dasharray", dasharray);
+    arc.setAttribute("stroke-dashoffset", dashoffset);
+    arc.style.color = hex; // drop-shadow(currentColor) glow matches the stroke
+    arc.dataset.index = String(i);
 
     const title = document.createElementNS(svgns, "title");
     title.textContent = `${seg.label} · ${seg.codon ? seg.codon.code : ""}`;
     hit.appendChild(title);
 
+    arcGroup.appendChild(arc);
+    arcGroup.appendChild(hit);
+
+    // Leader line + label, positioned by hand in unrotated space (mirrors
+    // the -90deg arc rotation by subtracting 90deg from the angle here too).
+    const midAngle = (startFrac + fracLen / 2) * 2 * Math.PI - Math.PI / 2;
+    const innerR = radius + strokeWidth / 2 + 4;
+    const outerR = radius + strokeWidth / 2 + 28;
+    const x1 = cx + innerR * Math.cos(midAngle);
+    const y1 = cy + innerR * Math.sin(midAngle);
+    const x2 = cx + outerR * Math.cos(midAngle);
+    const y2 = cy + outerR * Math.sin(midAngle);
+    const isRight = Math.cos(midAngle) >= 0;
+
+    const leader = document.createElementNS(svgns, "line");
+    leader.setAttribute("x1", x1);
+    leader.setAttribute("y1", y1);
+    leader.setAttribute("x2", x2);
+    leader.setAttribute("y2", y2);
+    leader.setAttribute("class", "dna-leader");
+    leader.dataset.index = String(i);
+    labelGroup.appendChild(leader);
+
+    const label = document.createElementNS(svgns, "text");
+    label.setAttribute("x", x2 + (isRight ? 4 : -4));
+    label.setAttribute("y", y2);
+    label.setAttribute("text-anchor", isRight ? "start" : "end");
+    label.setAttribute("dominant-baseline", "middle");
+    label.setAttribute("class", "dna-label");
+    label.dataset.index = String(i);
+    label.textContent = seg.codon ? seg.codon.code : "?";
+    labelGroup.appendChild(label);
+
     const onEnter = () => {
-      rung.classList.add("hover");
-      nodeA.classList.add("hover");
-      nodeB.classList.add("hover");
+      arc.classList.add("hover");
+      label.classList.add("hover");
+      leader.classList.add("hover");
     };
     const onLeave = () => {
-      rung.classList.remove("hover");
-      nodeA.classList.remove("hover");
-      nodeB.classList.remove("hover");
+      arc.classList.remove("hover");
+      label.classList.remove("hover");
+      leader.classList.remove("hover");
     };
     hit.addEventListener("mouseenter", onEnter);
     hit.addEventListener("mouseleave", onLeave);
     hit.addEventListener("click", () => setActiveGene(breakdown, i));
-
-    svg.appendChild(rung);
-    svg.appendChild(nodeA);
-    svg.appendChild(nodeB);
-    svg.appendChild(hit);
+    label.addEventListener("mouseenter", onEnter);
+    label.addEventListener("mouseleave", onLeave);
+    label.addEventListener("click", () => setActiveGene(breakdown, i));
 
     const chip = document.createElement("div");
     chip.className = "dna-chip";
@@ -501,6 +526,22 @@ function renderDna(breakdown) {
     chip.addEventListener("click", () => setActiveGene(breakdown, i));
     dnaSequenceEl.appendChild(chip);
   });
+
+  const centerCount = document.createElementNS(svgns, "text");
+  centerCount.setAttribute("x", cx);
+  centerCount.setAttribute("y", cy - 6);
+  centerCount.setAttribute("text-anchor", "middle");
+  centerCount.setAttribute("class", "dna-center-count");
+  centerCount.textContent = String(n);
+  svg.appendChild(centerCount);
+
+  const centerLabel = document.createElementNS(svgns, "text");
+  centerLabel.setAttribute("x", cx);
+  centerLabel.setAttribute("y", cy + 16);
+  centerLabel.setAttribute("text-anchor", "middle");
+  centerLabel.setAttribute("class", "dna-center-label");
+  centerLabel.textContent = "genes";
+  svg.appendChild(centerLabel);
 
   dnaHelixEl.innerHTML = "";
   dnaHelixEl.appendChild(svg);

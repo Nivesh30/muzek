@@ -42,9 +42,10 @@ only the derived patterns and colors, in a local SQLite database.
   open compare view
 - **Song DNA** — each section is encoded into a short genetic-style codon
   (key, mode, energy/brightness/rhythm tier — e.g. `F#mHM3`), strung together
-  into the song's "genome" and rendered as a double helix (two continuous
-  twisting backbone strands, colored rungs at each gene). Click a gene (or
-  its chip in the sequence strip below) to inspect it — synced with the
+  into the song's "genome" and rendered as a circular genome map (the
+  plasmid-map convention from real genomics software): proportional colored
+  arcs around a ring, with leader-line labels. Click a gene (arc or label,
+  or its chip in the sequence strip below) to inspect it — synced with the
   color timeline and detail panel
 
 ![Compare view](docs/screenshots/compare.png)
@@ -87,8 +88,8 @@ Then open `http://127.0.0.1:5000`. From there you can:
 
 - Drop one or more songs onto the sidebar to analyze them (sequentially, so
   the single-writer SQLite catalog never sees concurrent writes)
-- Click a song to see its color timeline, its DNA (a double helix, clickable
-  gene by gene), quantitative feature graphs, full palette, and its
+- Click a song to see its color timeline, its DNA (a circular genome map,
+  clickable gene by gene), quantitative feature graphs, full palette, and its
   most similar cataloged songs
 - Check two or more songs and click **Compare** to stack their timelines and
   graphs; hover to scrub all of them at once, or read the insights panel for

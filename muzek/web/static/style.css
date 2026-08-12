@@ -661,7 +661,8 @@ h1, h2, h3 {
 }
 
 .dna-helix {
-  width: 260px;
+  width: 380px;
+  max-width: 100%;
   margin: 8px auto 4px;
 }
 
@@ -674,41 +675,78 @@ h1, h2, h3 {
 
 .dna-enter {
   opacity: 0;
-  transform: translateY(6px);
-  animation: fadeSlideUp 0.6s cubic-bezier(0.22, 0.8, 0.2, 1) forwards;
+  transform: scale(0.92);
+  animation: dnaRingIn 0.6s cubic-bezier(0.22, 0.8, 0.2, 1) forwards;
 }
 
-.dna-strand {
+@keyframes dnaRingIn {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.dna-ring-track {
   fill: none;
-  stroke: rgba(255, 255, 255, 0.22);
-  stroke-width: 2.5;
-  stroke-linecap: round;
+  stroke: rgba(255, 255, 255, 0.06);
+  stroke-width: 22;
 }
 
-.dna-rung {
-  stroke-width: 3.5;
-  stroke-linecap: round;
-  transition: stroke-width 0.15s ease, filter 0.15s ease;
-  pointer-events: none;
-  filter: drop-shadow(0 0 3px currentColor);
+.dna-arc {
+  fill: none;
+  stroke-linecap: butt;
+  filter: drop-shadow(0 0 4px currentColor);
+  transition: filter 0.15s ease;
 }
 
-.dna-rung.hover,
-.dna-rung.active {
-  stroke-width: 5.5;
-  filter: drop-shadow(0 0 7px currentColor) brightness(1.25);
+.dna-arc.hover,
+.dna-arc.active {
+  filter: drop-shadow(0 0 12px currentColor) brightness(1.25);
 }
 
-.dna-rung-hit {
+.dna-arc-hit {
+  fill: none;
   stroke: transparent;
-  stroke-width: 14;
   cursor: pointer;
 }
 
-.dna-node {
-  fill: #f5f4ff;
-  filter: drop-shadow(0 0 3px rgba(245, 244, 255, 0.7));
-  pointer-events: none;
+.dna-leader {
+  stroke: rgba(255, 255, 255, 0.18);
+  stroke-width: 1;
+  transition: stroke 0.15s ease;
+}
+
+.dna-leader.hover {
+  stroke: rgba(255, 255, 255, 0.55);
+}
+
+.dna-label {
+  font-family: "Inter", monospace;
+  font-size: 10.5px;
+  fill: var(--text-dimmer);
+  cursor: pointer;
+  transition: fill 0.15s ease, font-weight 0.15s ease;
+}
+
+.dna-label.hover,
+.dna-label.active {
+  fill: var(--text);
+  font-weight: 600;
+}
+
+.dna-center-count {
+  font-family: "Sora", sans-serif;
+  font-size: 36px;
+  font-weight: 700;
+  fill: var(--text);
+}
+
+.dna-center-label {
+  font-family: "Inter", sans-serif;
+  font-size: 11px;
+  fill: var(--text-dimmer);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
 .dna-sequence {
