@@ -45,10 +45,13 @@ def analyze(path: str, title: str | None, artist_hint: str | None, db_path: str,
     for seg in breakdown["segments"]:
         color = seg["colors"][0]["hex"] if seg["colors"] else "?"
         feat = seg["features"] or {}
+        chords = json.loads(feat.get("chord_progression_json") or "[]")
+        chord_str = " ".join(c["chord"] for c in chords)
         click.echo(
             f"  [{seg['label']}] {seg['start']:6.1f}s - {seg['end']:6.1f}s  "
             f"key={feat.get('key_name')}{feat.get('mode', '')[:1]} "
             f"tempo={feat.get('tempo_bpm', 0):.0f}bpm  color={color}"
+            f"{'  chords=' + chord_str if chord_str else ''}"
         )
 
 

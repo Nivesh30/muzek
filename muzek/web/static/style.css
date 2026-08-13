@@ -628,6 +628,10 @@ h1, h2, h3 {
   gap: 14px 26px;
 }
 
+.detail-chords {
+  grid-column: 1 / -1;
+}
+
 .detail-label {
   display: block;
   font-size: 10.5px;

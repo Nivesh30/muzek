@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 from . import audio as audio_mod
 from .catalog import db
 from .color.mapping import DEFAULT_ALGORITHM, map_features_to_color
+from .features.chords import estimate_progression
 from .features.harmony import analyze_harmony, segment_harmony
 from .features.rhythm import analyze_rhythm, segment_rhythm
 from .features.structure import segment_structure
@@ -61,6 +62,9 @@ def analyze_song(
             **segment_harmony(harmony_profile, section.start, section.end),
             **segment_timbre(timbre_profile, section.start, section.end),
         }
+        features["chord_progression"] = estimate_progression(
+            harmony_profile, rhythm_profile.beat_times, section.start, section.end
+        )
         db.insert_segment_features(conn, segment_id, features)
 
         color = map_features_to_color(features, algorithm_version=color_algorithm)

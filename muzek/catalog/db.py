@@ -52,7 +52,8 @@ CREATE TABLE IF NOT EXISTS segment_features (
     energy_std REAL,
     spectral_centroid_mean REAL,
     spectral_bandwidth_mean REAL,
-    mfcc_mean_json TEXT
+    mfcc_mean_json TEXT,
+    chord_progression_json TEXT
 );
 
 CREATE TABLE IF NOT EXISTS segment_colors (
@@ -83,8 +84,17 @@ def connect(db_path: str | Path):
         conn.close()
 
 
+def _add_column_if_missing(conn: sqlite3.Connection, table: str, column: str, coltype: str) -> None:
+    existing = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
+    if column not in existing:
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {coltype}")
+
+
 def init_schema(conn: sqlite3.Connection) -> None:
     conn.executescript(SCHEMA)
+    # CREATE TABLE IF NOT EXISTS doesn't add columns to a table that already
+    # exists from an older schema version -- migrate those in explicitly.
+    _add_column_if_missing(conn, "segment_features", "chord_progression_json", "TEXT")
 
 
 def find_song_by_hash(conn: sqlite3.Connection, content_hash: str) -> sqlite3.Row | None:
@@ -130,8 +140,9 @@ def insert_segment_features(conn: sqlite3.Connection, segment_id: int, features:
         """INSERT INTO segment_features (
             segment_id, tempo_bpm, onset_density, key_pitch_class, key_name, mode,
             key_confidence, chroma_mean_json, energy_mean, energy_std,
-            spectral_centroid_mean, spectral_bandwidth_mean, mfcc_mean_json
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            spectral_centroid_mean, spectral_bandwidth_mean, mfcc_mean_json,
+            chord_progression_json
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (
             segment_id,
             features.get("tempo_bpm"),
@@ -146,6 +157,7 @@ def insert_segment_features(conn: sqlite3.Connection, segment_id: int, features:
             features.get("spectral_centroid_mean"),
             features.get("spectral_bandwidth_mean"),
             json.dumps(features.get("mfcc_mean", [])),
+            json.dumps(features.get("chord_progression", [])),
         ),
     )
 

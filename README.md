@@ -22,7 +22,9 @@ only the derived patterns and colors, in a local SQLite database.
 ## Features
 
 - **Rhythm** — tempo, beat grid, onset density (via `librosa`)
-- **Harmony** — chroma content, key estimation (Krumhansl-Schmuckler profiles)
+- **Harmony** — chroma content, key estimation (Krumhansl-Schmuckler profiles),
+  and a beat-synced chord progression per section (major/minor triad template
+  matching, consecutive repeats merged into runs — e.g. `C - Am - F - G`)
 - **Timbre** — brightness (spectral centroid), energy/loudness dynamics, MFCCs
 - **Structure** — beat-synced agglomerative segmentation into sections, with
   repeated sections recognized and labeled (A/B/C/...) by similarity
@@ -78,6 +80,9 @@ muzek show 1
 muzek dna 1
 ```
 
+Songs cataloged before a given analysis feature was added (e.g. chord
+progressions) won't have that data until re-analyzed with `--reanalyze`.
+
 ### Web UI
 
 ```bash
@@ -104,8 +109,9 @@ muzek/
   features/
     rhythm.py         # tempo, beat grid, onset density
     harmony.py         # chroma, key estimation
-    timbre.py           # brightness, energy, MFCCs
-    structure.py         # beat-synced segmentation + repeat labeling
+    chords.py           # beat-synced chord progression per section
+    timbre.py             # brightness, energy, MFCCs
+    structure.py            # beat-synced segmentation + repeat labeling
   color/
     mapping.py            # feature -> color, versioned algorithms
   dna.py                    # feature -> genetic-style codon, per section

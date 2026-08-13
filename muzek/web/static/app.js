@@ -370,6 +370,9 @@ function animateGraphDrawIn(wrap, delayMs) {
 
 function showDetail(seg, hex) {
   const f = seg.features || {};
+  const chords = f.chord_progression_json ? JSON.parse(f.chord_progression_json) : [];
+  const chordStr = chords.map((c) => c.chord).join(" – ");
+
   detailPanelEl.classList.remove("hidden");
   // Restart the entrance animation even if the panel is already open and
   // just switching to a different segment's details.
@@ -389,6 +392,7 @@ function showDetail(seg, hex) {
       <div><span class="detail-label">Onset density</span><span class="detail-value">${f.onset_density != null ? f.onset_density.toFixed(2) + "/s" : "?"}</span></div>
       <div><span class="detail-label">Color</span><span class="detail-value">${hex}</span></div>
       <div><span class="detail-label">Codon</span><span class="detail-value">${seg.codon ? seg.codon.code : "?"}</span></div>
+      <div class="detail-chords"><span class="detail-label">Chords</span><span class="detail-value">${chordStr || "?"}</span></div>
     </div>
   `;
 }
